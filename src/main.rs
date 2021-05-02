@@ -3,11 +3,13 @@ use rand::{Rng, thread_rng};
 
 const BOARD_SIZE: usize = 12;
 
+type Tail = (i8, i8);
+
 fn in_arr(nums: (i8, i8), snake_parts: &Vec<(i8, i8)>, s_p: usize) -> bool {
-    for i in s_p..snake_parts.len() { if snake_parts[i] == nums {return true} }
+    for i in s_p..snake_parts.len() {if snake_parts[i] == nums {return true}}
     false
 }
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 enum Direction {Up, Down, Left, Right}
 
 impl Direction {
@@ -17,10 +19,11 @@ impl Direction {
             Direction::Down => return matches!(dir, Direction::Up ),
             Direction::Left => return matches!(dir, Direction::Right),
             Direction::Right => return matches!(dir, Direction::Left)
-        } 
+        }
     }
 }
 
+#[derive(Debug)]
 struct Board {
     //field: [[char;BOARD_SIZE];BOARD_SIZE],
     snake_parts: Vec<(i8, i8)>,
@@ -54,6 +57,7 @@ impl Board {
             self.score += 1;
         }
     }
+
     fn print_field(&self) {
         println!("Current score: {}", self.score);
         for py in 0..BOARD_SIZE as i8 {
@@ -67,59 +71,113 @@ impl Board {
     }
 
     fn move_snake(&mut self, dir: Direction) { // (x, y)
-        if !dir.opposite(&self.direction) {self.direction = dir}
-        match dir { // TODO: move rest of the body and temporary stuff
+        if !dir.opposite(&self.direction) {self.direction = dir} // FIXME Something allows the snake to make a 180
+        match &self.direction { // TODO: move rest of the body and temporary stuff
             Direction::Up => {
-                for coord in self.snake_parts.clone() {
-                    for i in 1..self.snake_parts.len() {
-                        self.snake_parts[i] = self.snake_parts[i - 1];
-                    }
-                }
+                // FIXME only works if snake is lenght of 3
+                let old_head = self.snake_parts[0];
                 self.snake_parts[0].1 -= 1;
+
+                let mut old_tail: Tail = old_head;
+
+                for part in 0..self.snake_parts.len() {
+                    
+                    if part == 0 {self.snake_parts[1] = old_tail; old_tail = self.snake_parts[part + 1]; continue}
+
+                    if self.snake_parts[part] == old_tail {self.snake_parts[part] = self.snake_parts[part + 1];continue}
+
+                    self.snake_parts[part] = old_tail;
+                    old_tail = self.snake_parts[part];
+
+                }
             }
             Direction::Down => {
-                for coord in self.snake_parts.clone() {
-                    for i in 1..self.snake_parts.len() {
-                     self.snake_parts[i] = self.snake_parts[i - 1];
-                    }
-                }
+                
+                let old_head = self.snake_parts[0];
                 self.snake_parts[0].1 += 1;
+
+                let mut old_tail: Tail = old_head;
+
+                for part in 0..self.snake_parts.len() {
+                    
+                    if part == 0 {self.snake_parts[1] = old_tail; old_tail = self.snake_parts[part + 1]; continue}
+
+                    if self.snake_parts[part] == old_tail {self.snake_parts[part] = self.snake_parts[part + 1];continue}
+
+                    self.snake_parts[part] = old_tail;
+                    old_tail = self.snake_parts[part];
+
+                }
             }
             Direction::Left => {
-                for coord in self.snake_parts.clone() {
-                    for i in 1..self.snake_parts.len() {
-                     self.snake_parts[i] = self.snake_parts[i - 1];
-                    }
-                }
+                let old_head = self.snake_parts[0];
                 self.snake_parts[0].0 -= 1;
+
+                let mut old_tail: Tail = old_head;
+
+                for part in 0..self.snake_parts.len() {
+                    
+                    if part == 0 {self.snake_parts[1] = old_tail; old_tail = self.snake_parts[part + 1]; continue}
+
+                    if self.snake_parts[part] == old_tail {self.snake_parts[part] = self.snake_parts[part +1];continue}
+
+                    self.snake_parts[part] = old_tail;
+                    old_tail = self.snake_parts[part];
+
+                }
             }
             Direction::Right => {
-                for coord in self.snake_parts.clone() {
-                    for i in 1..self.snake_parts.len() {
-                     self.snake_parts[i] = self.snake_parts[i - 1];
-                    }
-                }
+                let old_head = self.snake_parts[0];
                 self.snake_parts[0].0 += 1;
-                println!("{:?}", self.snake_parts);
+
+                let mut old_tail: Tail = old_head;
+
+                for part in 0..self.snake_parts.len() {
+                    
+                    if part == 0 {self.snake_parts[1] = old_tail; old_tail = self.snake_parts[part + 1]; continue}
+
+                    if self.snake_parts[part] == old_tail {self.snake_parts[part] = self.snake_parts[part +1];continue}
+
+                    self.snake_parts[part] = old_tail;
+                    old_tail = self.snake_parts[part];
+
+                }
             }
         }
 
         if in_arr(self.snake_parts[0], &self.snake_parts, 1)  // loss detection: works
             || self.snake_parts[0].1 < 0
-            || self.snake_parts[0].1 >= 12
+            || self.snake_parts[0].1 >= BOARD_SIZE as i8
             || self.snake_parts[0].0 < 0
-            || self.snake_parts[0].0 >= 12
+            || self.snake_parts[0].0 >= BOARD_SIZE as i8
         {self.lost = true}
+    }
+
+    fn mv(&mut self, x_y: i8, dir: i8) {
+        let old_head = self.snake_parts[0];
+        self.snake_parts[0].1 += 1;
+
+        let mut old_tail: Tail = old_head;
+
+        for part in 0..self.snake_parts.len() {
+
+            if part == 0 {self.snake_parts[1] = old_tail; old_tail = self.snake_parts[part + 1]; continue}
+            
+            if self.snake_parts[part] == old_tail {self.snake_parts[part] = self.snake_parts[part + 1];continue}
+            
+            self.snake_parts[part] = old_tail;
+            old_tail = self.snake_parts[part];
+        }
     }
 }
 
-fn input() -> Direction { // temporary solution TODO: non blocking input
+fn input() -> Direction { // TODO temporary solution, non blocking input
     let direction: Direction;
     loop {
         let mut user_input = String::new();
         io::stdin().read_line(&mut user_input).unwrap();
         match user_input.trim() {
-            "w" | "W" => {direction = Direction::Up; break}, 
+            "w" | "W" => {direction = Direction::Up; break},
             "a" | "A" => {direction = Direction::Left; break}, 
             "s" | "S" => {direction = Direction::Down; break}, 
             "d" | "D" => {direction = Direction::Right; break},
@@ -134,6 +192,7 @@ fn main() {
     while !game.lost {
         game.print_field();
         game.update_snake(input());
+        println!("{:?}", game);
         // thread::sleep(time::Duration::from_millis(100)); commented out until I'm no longer bad
     }
     println!("Game over.\nYou finished with a score of: {}", game.score);
