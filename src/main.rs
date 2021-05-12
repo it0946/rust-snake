@@ -6,7 +6,7 @@ const GAME_SIZE: usize = 12;
 type Coord = (i8, i8);
 type Snake = Vec<Coord>;
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq)]
 enum Direction {Up, Down, Left, Right}
 struct Game {
     snake: Snake,
@@ -52,9 +52,9 @@ impl Game {
         {self.lost = true}
     }
     fn mv(&mut self) { // Move snake
-        let mut tail_old = self.snake[0];
-        let mut tail_old_2 = self.snake[0];
+        let mut tail_old = self.snake[0]; let mut tail_old_2 = self.snake[0];
         let tail_last = self.snake[self.snake.len() - 1];
+
         match self.direction {
             Direction::Up => self.snake[0].1 -= 1,
             Direction::Down => self.snake[0].1 += 1,
@@ -63,13 +63,11 @@ impl Game {
         }
 
         for p in 1..self.snake.len() { // Move rest of the snake
-            // spaghetti code time
             if p == 1 {tail_old_2 = self.snake[1]; self.snake[1] = tail_old; continue}
             if p % 2 == 0 {tail_old = self.snake[p]; self.snake[p] = tail_old_2; continue}
             tail_old_2 = self.snake[p];
             self.snake[p] = tail_old;
         }
-
         if self.add_new {self.snake.push(tail_last); self.add_new = false}
     }
     fn new_apple() -> Coord { // New apple
